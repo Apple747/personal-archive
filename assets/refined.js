@@ -95,11 +95,13 @@ if(page==='life.html'){
   const list=$('.archive-list');
   try{
     const entries=JSON.parse(localStorage.getItem('pa-entries')||'[]');
-    entries.filter(entry=>!entry.type||entry.type==='life'||entry.type==='note').forEach(entry=>{
-      const item=document.createElement('article');item.className='user-entry';
+    entries.filter(entry=>(entry.visibility||'published')==='published'&&(!entry.type||entry.type==='life'||entry.type==='note')).forEach(entry=>{
+      const item=document.createElement('a');item.className='user-entry';item.href='entry.html?id='+encodeURIComponent(entry.id);item.dataset.title=entry.title||'';item.dataset.type=entry.type||'life';
       item.innerHTML=(entry.image?'<img src="'+entry.image+'" alt="">':'')+'<div><time>'+entry.date+'</time><small>'+entry.category+'</small><h3>'+entry.title+'</h3><p>'+entry.text.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')+'</p></div>';
       list.prepend(item);
     });
+    const controls=document.createElement('div');controls.className='archive-tools';controls.innerHTML='<label><span>搜索记录</span><input type="search" placeholder="输入标题或关键词"></label><label><span>类型</span><select><option value="all">全部</option><option value="life">生活记录</option><option value="note">随手文字</option></select></label>';
+    list.before(controls);const search=$('input',controls),filter=$('select',controls);const apply=()=>{$$('.user-entry',list).forEach(item=>{const hit=(item.textContent||'').toLowerCase().includes(search.value.trim().toLowerCase());item.hidden=!hit||(filter.value!=='all'&&item.dataset.type!==filter.value)})};search.addEventListener('input',apply);filter.addEventListener('change',apply);
   }catch(e){console.warn('Local archive could not be read.',e)}
 }
 
@@ -110,7 +112,7 @@ let storedEntries=[];try{storedEntries=JSON.parse(localStorage.getItem('pa-entri
 const readingPageStatus={'reading-now.html':'current','reading-favorites.html':'favorite','reading-finished.html':'finished'}[page];
 if(readingPageStatus){
   const detail=$('.reading-detail');
-  storedEntries.filter(entry=>entry.type==='book'&&entry.subtype===readingPageStatus).forEach(entry=>{
+  storedEntries.filter(entry=>(entry.visibility||'published')==='published'&&entry.type==='book'&&entry.subtype===readingPageStatus).forEach(entry=>{
     const article=document.createElement('article');article.className='reading-detail-head user-book';
     article.innerHTML=(entry.image?'<img src="'+entry.image+'" alt="'+safeText(entry.title)+' 封面">':'<div class="book-placeholder">BOOK</div>')+'<div><time>'+safeText(entry.date)+'</time><small>'+safeText(entry.author)+(entry.rating?' · '+safeText(entry.rating):'')+'</small><h2>'+safeText(entry.title)+'</h2><p>'+safeText(entry.text).replace(/\n/g,'<br>')+'</p>'+(readingPageStatus==='current'?'<div class="reading-progress" style="--progress:'+Math.max(0,Math.min(100,entry.progress||0))+'%"><i></i></div>':'')+'</div>';
     detail.prepend(article);
@@ -119,13 +121,13 @@ if(readingPageStatus){
 
 if(page==='books.html'){
   const statuses=['current','favorite','finished'];
-  $$('.shelf article').forEach((card,index)=>{const number=storedEntries.filter(entry=>entry.type==='book'&&entry.subtype===statuses[index]).length;if(number){const badge=document.createElement('em');badge.className='content-count';badge.textContent=number+' 本已添加';card.append(badge)}});
+  $$('.shelf article').forEach((card,index)=>{const number=storedEntries.filter(entry=>(entry.visibility||'published')==='published'&&entry.type==='book'&&entry.subtype===statuses[index]).length;if(number){const badge=document.createElement('em');badge.className='content-count';badge.textContent=number+' 本已添加';card.append(badge)}});
 }
 
 // Hobby entries land in ANIME / GAME / MUSIC / PHOTO instead of a generic list.
 if(page==='hobbies.html'){
   ['anime','game','music','photo'].forEach(type=>{
-    const section=$('#'+type);if(!section)return;const items=storedEntries.filter(entry=>entry.type==='hobby'&&entry.subtype===type);if(!items.length)return;
+    const section=$('#'+type);if(!section)return;const items=storedEntries.filter(entry=>(entry.visibility||'published')==='published'&&entry.type==='hobby'&&entry.subtype===type);if(!items.length)return;
     const list=document.createElement('div');list.className='hobby-user-items';
     items.forEach(entry=>{const item=document.createElement('div');item.className='hobby-user-card';item.innerHTML=(entry.image?'<img src="'+entry.image+'" alt="">':'')+'<small>'+safeText(entry.status)+' · '+safeText(entry.date)+'</small><b>'+safeText(entry.title)+'</b><p>'+safeText(entry.text)+'</p>';list.append(item)});section.append(list);
   });
