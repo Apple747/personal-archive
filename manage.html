@@ -40,4 +40,5 @@
     document.querySelector('#export').onclick=()=>{const blob=new Blob([JSON.stringify(entries(),null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='personal-archive-backup.json';a.click();URL.revokeObjectURL(a.href)};
     document.querySelector('#import-button').onclick=()=>document.querySelector('#import-file').click();document.querySelector('#import-file').onchange=e=>{const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result);if(!Array.isArray(data))throw 0;localStorage.setItem(key,JSON.stringify(data));updateCount();alert('备份已导入。')}catch{alert('这个备份文件无法读取。')}};reader.readAsText(e.target.files[0])};
   </script>
+  <script src="assets/manage-content.js"></script>
 </body></html>
